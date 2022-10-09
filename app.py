@@ -1,9 +1,9 @@
 from aiogram import executor
 
-from loader import dp
+from handlers import dp
 
 
-async def on_startup(dispatcher):
+async def on_startup(_):
     pass
 
 
