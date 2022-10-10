@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 from typing import Union
 
@@ -6,8 +7,10 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.utils.markdown import hbold
 
-from loader import dp, bot, db
-from keyboards import from_list_kb, divisions_cd, is_trainer_kb, ready_kb
+from loader import dp, bot
+from utils import db, track_week, send_previous_publications
+from keyboards import from_list_kb, divisions_cd, is_trainer_kb, ready_kb, main_menu_kb
+from utils import set_default_commands, mailing
 from config import companies, divisions
 
 
@@ -80,3 +83,20 @@ async def choose_role(call: types.CallbackQuery):
                                   is_trainer=True)
     else:
         await finish_registration(call_or_message=call, division="Другой", company="Корпоративная Академия Росатома")
+
+
+@dp.callback_query_handler(text="ready")
+async def user_ready(call: types.CallbackQuery):
+    await call.message.delete()
+    await call.message.answer("🎉 Поздравляем, ты стал частью команды профессионалов и работаешь в Госкорпорации "
+                              "«Росатом». В первую очередь тебе необходимо оформить документы в отделе кадров "
+                              "предприятия\n\n "
+                              "Также ты можешь познакомиться с нашей отраслью поближе! Я добавил разные разделы, "
+                              "в которых ты можешь побольше узнать о Росатоме.⚛️",
+                              reply_markup=main_menu_kb)
+
+    await set_default_commands(dp)
+
+    asyncio.create_task(mailing(call.from_user.id, call.bot))
+    asyncio.create_task(send_previous_publications(call.from_user.id, call.bot))
+    asyncio.create_task(track_week(call.from_user.id))

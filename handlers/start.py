@@ -2,8 +2,8 @@ from aiogram import types
 from aiogram.dispatcher.filters.builtin import CommandStart
 from aiogram.utils.markdown import hlink
 
-from loader import dp, db
-
+from loader import dp
+from utils import db
 from keyboards import accept_kb, main_menu_kb
 
 
