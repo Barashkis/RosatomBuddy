@@ -1,4 +1,5 @@
 from loader import dp
+from logger import logger
 from utils import db
 
 from aiogram import types
@@ -12,3 +13,5 @@ async def user_leave_or_join(update: types.ChatMemberUpdated):
         leave = True
 
     await db.update_user(update.chat.id, leave=leave)
+
+    logger.debug(f"User {update.from_user.id} {'stopped' if leave else 'joined'} the bot")

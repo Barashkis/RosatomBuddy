@@ -17,6 +17,20 @@ class Database:
 
     async def create_all_tables(self):
         sql = """
+        CREATE TABLE IF NOT EXISTS Admins (
+        id SERIAL NOT NULL,
+        user_id BIGINT,
+        PRIMARY KEY (user_id)
+        );
+        
+        CREATE TABLE IF NOT EXISTS Posts (
+        id SERIAL NOT NULL,
+        tag VARCHAR(20),
+        text VARCHAR,
+        photo VARCHAR,
+        PRIMARY KEY (id)
+        );
+        
         CREATE TABLE IF NOT EXISTS Users (
         id SERIAL NOT NULL,
         user_id BIGINT,
@@ -27,24 +41,19 @@ class Database:
         is_trainer BOOLEAN,
         date_of_registration BIGINT,
         status VARCHAR(100) DEFAULT 'Догоняет публикации',
+        last_publication_id INT DEFAULT 0,
         leave BOOLEAN DEFAULT FALSE,
         PRIMARY KEY (user_id)
         );
 
         CREATE TABLE IF NOT EXISTS Publications (
         id SERIAL NOT NULL,
-        text VARCHAR DEFAULT NULL,
+        text VARCHAR,
         week INT,
         day INT,
         hour INT,
         minutes INT,
         for_trainer BOOLEAN,
-        PRIMARY KEY (id)
-        );
-        
-        CREATE TABLE IF NOT EXISTS Posts (
-        id SERIAL NOT NULL,
-        
         PRIMARY KEY (id)
         );
         """
@@ -55,6 +64,13 @@ class Database:
         query = ", ".join([f"{column} = ${number}" for number, column in enumerate(arguments.keys(), start=2)])
 
         return query
+
+    async def add_admin(self, user_id: int):
+        sql = """
+        INSERT INTO Admins (user_id) 
+        VALUES ($1);
+        """
+        await self.pool.execute(sql, user_id)
 
     async def add_user(self, user_id: int, username: str, division: str,
                        company: str, is_trainer: bool, date_of_registration: int):
@@ -71,6 +87,13 @@ class Database:
         """
         await self.pool.execute(sql, text, week, day, hour, minutes, for_trainer)
 
+    async def add_post(self, tag: str, text: str, photo: str):
+        sql = """
+        INSERT INTO Posts (tag, text, photo) 
+        VALUES ($1, $2, $3);
+        """
+        await self.pool.execute(sql, tag, text, photo)
+
     async def get_user(self, user_id: int):
         sql = f"""
         SELECT * FROM Users 
@@ -78,12 +101,31 @@ class Database:
         """
         return await self.pool.fetchrow(sql, user_id)
 
-    async def get_publication(self, week: int, day: int, hour: int, minutes: int, for_trainer: bool):
+    async def get_publication(self, publication_id: int):
         sql = f"""
         SELECT * FROM Publications 
-        WHERE week = $1 AND day = $2 AND hour = $3 AND minutes = $4 AND for_trainer = $5;
+        WHERE id = $1;
         """
-        return await self.pool.fetchrow(sql, week, day, hour, minutes, for_trainer)
+        return await self.pool.fetchrow(sql, publication_id)
+
+    async def get_post(self, post_id: int):
+        sql = f"""
+        SELECT * FROM Posts 
+        WHERE id = $1;
+        """
+        return await self.pool.fetchrow(sql, post_id)
+
+    async def get_admins(self):
+        sql = f"""
+        SELECT * FROM Admins; 
+        """
+        return await self.pool.fetch(sql)
+
+    async def get_all_users(self):
+        sql = f"""
+        SELECT * FROM Users; 
+        """
+        return await self.pool.fetch(sql)
 
     async def get_publications(self, week: int):
         sql = f"""
@@ -91,6 +133,13 @@ class Database:
         WHERE week = $1;
         """
         return await self.pool.fetch(sql, week)
+
+    async def get_posts(self, tag: str):
+        sql = f"""
+        SELECT * FROM Posts 
+        WHERE tag = $1;
+        """
+        return await self.pool.fetch(sql, tag)
 
     async def update_user(self, user_id: int, **kwargs):
         sql = f"""
@@ -107,6 +156,14 @@ class Database:
         WHERE id = $1;
         """
         return await self.pool.execute(sql, publication_id, *kwargs.values())
+
+    async def update_post(self, post_id: int, **kwargs):
+        sql = f"""
+        UPDATE Posts 
+        SET {self.format_args(kwargs)} 
+        WHERE id = $1;
+        """
+        return await self.pool.execute(sql, post_id, *kwargs.values())
 
 
 db = Database(loop=asyncio.get_event_loop())

@@ -1,5 +1,9 @@
 from os import getenv
+
+import pytz
 from dotenv import load_dotenv
+from pathlib import Path
+
 
 load_dotenv()
 
@@ -10,8 +14,14 @@ pg_pass = getenv("PG_PASS")
 pg_host = getenv("PG_HOST")
 pg_db_name = getenv("PG_DB_NAME")
 
+admin_id = int(getenv("ADMIN_ID"))
+
 publications_link = getenv("PUBLICATIONS_LINK")
 posts_link = getenv("POSTS_LINK")
+
+logs_dir = str(Path(Path().resolve(), "logs"))
+
+timezone = pytz.timezone('Europe/Moscow')
 
 divisions = [
     "Электроэнергетический",

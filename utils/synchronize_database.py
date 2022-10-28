@@ -3,10 +3,11 @@ import re
 
 import gspread as gspread
 
+from logger import logger
 from config import publications_link, posts_link, week_days
 from .postgresql import db
 
-gc = gspread.service_account_from_dict()
+gc = gspread.service_account()
 
 
 async def sync_publications():
@@ -40,55 +41,72 @@ async def sync_publications():
                 if not all([day, text, hour]):
                     continue
 
-                current_publication = await db.get_publication(week, day, hour, minutes, for_trainer)
+                current_publication = await db.get_publication(publication_id)
 
                 if not current_publication:
                     await db.add_publication(text, week, day, hour, minutes, for_trainer)
+
+                    logger.debug(f"Publication with {publication_id=} was added successfully")
                 elif list(current_publication)[1:] != [text, week, day, hour, minutes, for_trainer]:
-                    await db.update_publication(publication_id, text=text, week=week, day=day, hour=hour, minutes=minutes, for_trainer=for_trainer)
+                    await db.update_publication(publication_id, text=text, week=week, day=day, hour=hour,
+                                                minutes=minutes, for_trainer=for_trainer)
+
+                    logger.debug(f"Publication with {publication_id=} was updated successfully")
 
                 text, for_trainer, hour, minutes = [None] * 4
 
                 publication_id += 1
 
-        await asyncio.sleep(300)
+        await asyncio.sleep(3600 * 24)
+
+        logger.debug("Publications sheets were checked and synchronized with database successfully")
 
 
 async def sync_posts():
     while True:
         document = gc.open_by_url(posts_link)
 
+        post_id = 1
         for sheet in document:
-            counter = 1
-            if sheet.title == "История Росатома":
-                theme = "RFACTS"
-            elif sheet.title == "Люди Росатома":
-                theme = 'RFACES'
-            elif sheet.title == 'Проекты Росатома':
-                theme = 'RPROJ'
-            elif sheet.title == 'Полезные ресурсы и ссылки':
-                theme = 'FAQ'
-            elif sheet.title == 'Дивизионы':
-                theme = 'DIVISIONS'
-            else:
-                theme = 'UINFO'
-            for row in sheet.get_all_values():
-                if row[0]:
-                    if len(row) > 1 and 'http' in row[1]:
-                        photo = row[1]
-                    else:
-                        photo = None
-                    text = row[0]
-                    if not await db.menu_posts.count_documents({'uid': counter, 'theme': theme}):
-                        db.menu_posts.insert_one(
-                            {'uid': counter, 'text': text.replace('\n', '\n\n'), 'photo': photo,
-                             'theme': theme})
-                    else:
-                        db.menu_posts.update_one(
-                            {'uid': counter, 'theme': theme},
-                            {"$set": {'text': text.replace('\n', '\n\n'), 'photo': photo}})
-                    counter += 1
-            await db.users.update_many({theme: {'$gte': counter}}, {'$set': {theme: counter}})
-            await db.menu_posts.delete_many({'theme': theme, 'uid': {'$gte': counter}})
+            title = sheet.title.lower()
 
-        await asyncio.sleep(1800)
+            if "история" in title:
+                tag = "facts"
+            elif "лица" in title:
+                tag = "faces"
+            elif "проекты" in title:
+                tag = "projects"
+            elif "ресурсы" in title:
+                tag = "sources"
+            else:
+                tag = "information"
+
+            row = sheet.row_values(1)[1:]
+            for post in row:
+                if post:
+                    try:
+                        photo = re.findall(r"https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}\.jpg", post)[0]
+                    except IndexError:
+                        photo = None
+
+                    if photo:
+                        text = post.replace(photo, "")
+                    else:
+                        text = post
+
+                    current_post = await db.get_post(post_id)
+
+                    if not current_post:
+                        await db.add_post(tag, text, photo)
+
+                        logger.debug(f"Post with {post_id=} was added successfully")
+                    elif list(current_post)[1:] != [tag, text, photo]:
+                        await db.update_post(post_id, tag=tag, text=text, photo=photo)
+
+                        logger.debug(f"Post with {post_id=} was updated successfully")
+
+                post_id += 1
+
+        await asyncio.sleep(3600 * 24)
+
+        logger.debug("Posts sheets were checked and synchronized with database successfully")

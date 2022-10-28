@@ -2,9 +2,10 @@ from aiogram import types
 from aiogram.dispatcher.filters.builtin import CommandStart
 from aiogram.utils.markdown import hlink
 
+from logger import logger
 from loader import dp
 from utils import db
-from keyboards import accept_kb, main_menu_kb
+from keyboards import accept_kb
 
 
 @dp.message_handler(CommandStart())
@@ -13,8 +14,10 @@ async def send_welcome(message: types.Message):
     user = await db.get_user(user_id)
 
     if user:
-        await message.delete()
-        await message.answer("Выбери раздел, который тебя интересует", reply_markup=main_menu_kb)
+        await message.answer(text="Кажется, ты уже регистрировался в боте. Чтобы получить доступ к главному меню, "
+                                  "воспользуйся командой /menu")
+
+        logger.debug(f"User {message.from_user.id} entered /start command but he has already registered")
     else:
         await message.answer_sticker("CAACAgIAAxkBAAMGYVllOhTCuyx9DP8vOeswNLQ5WoMAAioDAALPu9QOH_K1GH9lnzAhBA")
         await message.answer("👋Привет! Меня зовут Бадди, я буду сопровождать тебя на протяжении 12 недель: "
@@ -32,3 +35,5 @@ async def send_welcome(message: types.Message):
             f"{hlink('политикой конфиденциальности персональных данных Госкорпорации «Росатом»', 'https://www.rosatom.ru/upload/iblock/cca/ccaff8fd4eab182ebd0e347053cd7945.pdf')}"
             " и принимаете её",
             reply_markup=accept_kb)
+
+        logger.debug(f"User {message.from_user.id} started the bot")
