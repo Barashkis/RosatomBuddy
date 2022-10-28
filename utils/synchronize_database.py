@@ -7,7 +7,7 @@ from logger import logger
 from config import publications_link, posts_link, week_days
 from .postgresql import db
 
-gc = gspread.service_account()
+gc = gspread.service_account(filename="credentials.json")
 
 
 async def sync_publications():
