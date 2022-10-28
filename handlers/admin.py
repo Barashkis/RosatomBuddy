@@ -4,6 +4,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 
+from config import timezone
 from filters import IsAdmin, IsForwarded, IsFromUser
 from keyboards import admin_pagination_kb, admin_kb, admin_cd
 from logger import logger
@@ -36,7 +37,7 @@ async def admin_pagination(call: types.CallbackQuery, callback_data: dict):
     user = users[page - 1]
 
     id_ = user["user_id"]
-    date_of_registration = datetime.fromtimestamp(user["date_of_registration"]).strftime("%d.%m.%Y %H:%M")
+    date_of_registration = datetime.fromtimestamp(user["date_of_registration"]).astimezone(timezone).strftime("%d.%m.%Y %H:%M")
     username = user["username"] if user["username"] else "отсутствует"
     division = user["division"]
     company = user["company"] if user["company"] else "отсутствует"

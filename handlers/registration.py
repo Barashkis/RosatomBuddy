@@ -11,14 +11,14 @@ from loader import dp, bot
 from logger import logger
 from utils import db, track_week, send_previous_publications, mailing, set_default_commands
 from keyboards import from_list_kb, divisions_cd, is_trainer_kb, ready_kb, main_menu_kb
-from config import companies, divisions, timezone
+from config import companies, divisions
 
 
 async def finish_registration(call_or_message: Union[types.CallbackQuery, types.Message],
                               division: str, company: str = None, is_trainer: bool = False):
     user_id = call_or_message.from_user.id
     username = call_or_message.from_user.username
-    date_of_registration = int(datetime.now().astimezone(timezone).timestamp())
+    date_of_registration = int(datetime.now().timestamp())
 
     await db.add_user(user_id, username, division, company, is_trainer, date_of_registration)
 
