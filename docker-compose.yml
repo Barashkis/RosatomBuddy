@@ -12,7 +12,7 @@ services:
     networks:
       - botnet
     volumes:
-      - ./postgres:var/lib/postgresql
+      - ./postgres:/var/lib/postgresql
 
   telegram_bot:
     container_name: rosatom_scedule_bot
