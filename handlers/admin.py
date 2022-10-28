@@ -102,7 +102,7 @@ async def adding_admin(message: types.Message, state: FSMContext):
 
     await state.finish()
 
-    logger.debug(f"Admin {message.from_user.id} entered adding_admin handler and got text message {text=}")
+    logger.debug(f"Admin {message.from_user.id} entered adding_admin handler and got text message '{text}'")
 
 
 @dp.message_handler(state='adding_admin')
