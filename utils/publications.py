@@ -21,9 +21,9 @@ async def send_previous_publications(user_id: int):
             current_hour = today.hour
             current_minutes = today.minute
 
-            if publication["day"] <= current_week_day and \
-                    (publication["hour"] <= current_hour or
-                     publication["hour"] <= current_hour and publication["minutes"] <= current_minutes):
+            if publication["day"] < current_week_day or \
+                    (publication["day"] == current_week_day and (publication["hour"] < current_hour
+                     or publication["hour"] == current_hour and publication["minutes"] <= current_minutes)):
                 if publication["for_trainer"] and not user["is_trainer"]:
                     continue
 
