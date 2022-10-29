@@ -1,5 +1,6 @@
 credentials.json
 
+postgres/
 .idea
 
 # Byte-compiled / optimized / DLL files
