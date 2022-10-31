@@ -76,7 +76,7 @@ async def mailing(user_id):
             await asyncio.sleep(59)
 
 
-async def track_week(user_id: int):
+async def track_week():
     while True:
         previous_week = datetime.today().astimezone(timezone).isocalendar()[1]
 
@@ -85,9 +85,6 @@ async def track_week(user_id: int):
         current_week = datetime.today().astimezone(timezone).isocalendar()[1]
 
         if current_week == previous_week + 1:
-            user = await db.get_user(user_id)
-            week = user["week"]
+            await db.next_week()
 
-            await db.update_user(user_id, week=week + 1)
-
-            logger.debug(f"Week of the user {user_id} was updated from {week} to {week + 1}")
+            logger.debug(f"Week was updated to all users")

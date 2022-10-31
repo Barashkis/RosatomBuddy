@@ -6,7 +6,7 @@ import filters
 
 from handlers import dp
 from logger import logger
-from utils import db, sync_publications, sync_posts, mailing, send_previous_publications
+from utils import db, sync_publications, sync_posts, mailing, send_previous_publications, track_week
 from config import admin_id
 
 
@@ -18,6 +18,8 @@ async def on_startup(_):
         await db.add_admin(admin_id)
 
     logger.debug("Admins were added to the database successfully")
+
+    asyncio.create_task(track_week())
 
     users = await db.get_all_users()
     for user in users:

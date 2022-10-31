@@ -165,5 +165,12 @@ class Database:
         """
         return await self.pool.execute(sql, post_id, *kwargs.values())
 
+    async def next_week(self):
+        sql = f"""
+        UPDATE Users 
+        SET week = week + 1;
+        """
+        return await self.pool.execute(sql)
+
 
 db = Database(loop=asyncio.get_event_loop())

@@ -9,7 +9,7 @@ from aiogram.utils.markdown import hbold
 
 from loader import dp, bot
 from logger import logger
-from utils import db, track_week, send_previous_publications, mailing, set_default_commands
+from utils import db, send_previous_publications, mailing, set_default_commands
 from keyboards import from_list_kb, divisions_cd, is_trainer_kb, ready_kb, main_menu_kb
 from config import companies, divisions
 
@@ -108,7 +108,6 @@ async def user_ready(call: types.CallbackQuery):
 
     await set_default_commands(dp)
 
-    asyncio.create_task(track_week(call.from_user.id))
     asyncio.create_task(send_previous_publications(call.from_user.id))
     asyncio.create_task(mailing(call.from_user.id))
 
