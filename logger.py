@@ -1,8 +1,7 @@
 import logging
 import datetime
-import os
 
-from config import logs_dir, timezone
+from config import timezone
 
 
 class Formatter(logging.Formatter):
@@ -26,17 +25,13 @@ class Formatter(logging.Formatter):
         return s
 
 
-if not os.path.exists("logs"):
-    os.mkdir("logs")
-
-today = datetime.datetime.today().astimezone(timezone)
-filename = f'{today.day:02d}-{today.month:02d}-{today.year}.log'
+filename = f"logfile.log"
 
 logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
 
-file_handler = logging.FileHandler(os.path.join(logs_dir, filename))
+file_handler = logging.FileHandler(filename)
 file_handler.setLevel(logging.DEBUG)
 
 stream_handler = logging.StreamHandler()
