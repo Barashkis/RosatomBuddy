@@ -9,19 +9,19 @@ from config import timezone
 from loader import bot
 
 
-async def send_previous_publications(user_id: int):
-    user = await db.get_user(user_id)
-
-    if user["status"] == "Догоняет публикации" and user["leave"] is False:
+async def send_previous_publications(user_id: int, status: str, leave: bool):
+    if status == "Догоняет публикации" and leave is False:
         first_week_publications = await db.get_publications(week=1)
         for publication in first_week_publications:
+            user = await db.get_user(user_id)
+
             today = datetime.today().astimezone(timezone)
 
             current_week_day = today.isoweekday()
             current_hour = today.hour
             current_minutes = today.minute
 
-            if publication["day"] < current_week_day or \
+            if user["week"] == 2 or publication["day"] < current_week_day or \
                     (publication["day"] == current_week_day and (publication["hour"] < current_hour
                      or publication["hour"] == current_hour and publication["minutes"] <= current_minutes)):
                 if publication["for_trainer"] and not user["is_trainer"]:
