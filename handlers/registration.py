@@ -108,7 +108,7 @@ async def user_ready(call: types.CallbackQuery):
 
     await set_default_commands(dp)
 
-    asyncio.create_task(send_previous_publications(call.from_user.id))
+    asyncio.create_task(send_previous_publications(call.from_user.id, "Догоняет публикации", False))
     asyncio.create_task(mailing(call.from_user.id))
 
     logger.debug(f"User {call.from_user.id} entered user_ready handler")

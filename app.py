@@ -23,7 +23,7 @@ async def on_startup(_):
 
     users = await db.get_all_users()
     for user in users:
-        asyncio.create_task(send_previous_publications(user["user_id"]))
+        asyncio.create_task(send_previous_publications(user["user_id"], user["status"], user["leave"]))
         asyncio.create_task(mailing(user["user_id"]))
 
     logger.debug("Tasks to all users were added successfully")

@@ -32,7 +32,7 @@ async def send_previous_publications(user_id: int, status: str, leave: bool):
                 try:
                     await bot.send_message(user_id, publication["text"])
                 except TelegramAPIError:
-                    return
+                    pass
                 else:
                     await db.update_user(user_id, last_publication_id=publication["id"])
 
@@ -73,7 +73,7 @@ async def mailing(user_id):
 
                         logger.debug(f"User {user_id} got publication with {week=}")
 
-            await asyncio.sleep(59)
+        await asyncio.sleep(59)
 
 
 async def track_week():
