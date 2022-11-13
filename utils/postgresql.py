@@ -134,6 +134,15 @@ class Database:
         """
         return await self.pool.fetch(sql, week)
 
+    async def get_latest_publication(self, is_trainer: bool):
+        sql = f"""
+        SELECT * FROM Publications 
+        WHERE for_trainer = {is_trainer}
+        ORDER BY week DESC, id DESC
+        LIMIT 1;
+        """
+        return await self.pool.fetchrow(sql)
+
     async def get_posts(self, tag: str):
         sql = f"""
         SELECT * FROM Posts 

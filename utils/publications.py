@@ -9,8 +9,8 @@ from config import timezone
 from loader import bot
 
 
-async def send_previous_publications(user_id: int, status: str, leave: bool):
-    if status == "Догоняет публикации" and leave is False:
+async def send_previous_publications(user_id: int, status: str):
+    if status == "Догоняет публикации":
         first_week_publications = await db.get_publications(week=1)
         for publication in first_week_publications:
             user = await db.get_user(user_id)
@@ -21,9 +21,10 @@ async def send_previous_publications(user_id: int, status: str, leave: bool):
             current_hour = today.hour
             current_minutes = today.minute
 
-            if user["week"] == 2 or publication["day"] < current_week_day or \
-                    (publication["day"] == current_week_day and (publication["hour"] < current_hour
-                     or publication["hour"] == current_hour and publication["minutes"] <= current_minutes)):
+            if (user["week"] == 2 or (publication["day"] < current_week_day or
+               (publication["day"] == current_week_day and (publication["hour"] < current_hour
+                or publication["hour"] == current_hour and publication["minutes"] <= current_minutes)))) and \
+                    user["last_publication_id"] < publication["id"]:
                 if publication["for_trainer"] and not user["is_trainer"]:
                     continue
 
@@ -31,12 +32,18 @@ async def send_previous_publications(user_id: int, status: str, leave: bool):
 
                 try:
                     await bot.send_message(user_id, publication["text"])
-                except TelegramAPIError:
-                    pass
-                else:
-                    await db.update_user(user_id, last_publication_id=publication["id"])
 
                     logger.debug(f"User {user_id} got first week catch-up publication")
+                except TelegramAPIError:
+                    skipped_publications = user["skipped_publications"].split()
+                    skipped_publications.append(str(publication["id"]))
+                    skipped_publications = " ".join(skipped_publications)
+
+                    await db.update_user(user_id, skipped_publications=skipped_publications)
+
+                    logger.debug(f"User {user_id} skipped first week catch-up publication")
+
+                await db.update_user(user_id, last_publication_id=publication["id"])
 
         await db.update_user(user_id, status="Получает публикации по расписанию")
 
@@ -46,7 +53,7 @@ async def send_previous_publications(user_id: int, status: str, leave: bool):
 async def mailing(user_id):
     while True:
         user = await db.get_user(user_id)
-        if user["status"] == "Получает публикации по расписанию" and user["leave"] is False:
+        if user["status"] == "Получает публикации по расписанию":
             today = datetime.today().astimezone(timezone)
 
             current_week_day = today.isoweekday()
@@ -66,12 +73,26 @@ async def mailing(user_id):
                         and user["last_publication_id"] != publication["id"]:
                     try:
                         await bot.send_message(user_id, publication["text"])
-                    except TelegramAPIError:
-                        pass
-                    else:
-                        await db.update_user(user_id, last_publication_id=publication["id"])
 
                         logger.debug(f"User {user_id} got publication with {week=}")
+                    except TelegramAPIError:
+                        skipped_publications = user["skipped_publications"].split()
+                        skipped_publications.append(str(publication["id"]))
+                        skipped_publications = " ".join(skipped_publications)
+
+                        await db.update_user(user_id, skipped_publications=skipped_publications)
+
+                        logger.debug(f"User {user_id} skipped publication with {week=}")
+
+                    await db.update_user(user_id, last_publication_id=publication["id"])
+
+                    last_publication = await db.get_latest_publication(user["is_trainer"])
+                    if last_publication["id"] == publication["id"]:
+                        await db.update_user(user_id, status="Прошел программу адаптации")
+        elif user["status"] == "Прошел программу адаптации":
+            logger.debug(f"User {user_id} finished adaptation program")
+
+            break
 
         await asyncio.sleep(59)
 
