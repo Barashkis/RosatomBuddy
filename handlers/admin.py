@@ -21,11 +21,9 @@ async def admin_panel(message: types.Message):
 
 @dp.callback_query_handler(admin_cd.filter())
 async def admin_pagination(call: types.CallbackQuery, callback_data: dict):
-    await call.message.delete()
-
     users = await db.get_all_users()
     if not users:
-        await call.message.answer("В базе пока нету зарегистрированных пользователей...", reply_markup=admin_kb)
+        await call.message.edit_text("В базе пока нету зарегистрированных пользователей...", reply_markup=admin_kb)
 
         logger.debug(f"Admin {call.from_user.id} entered admin_pagination handler but there wasn't any users in the database")
 
@@ -60,26 +58,24 @@ async def admin_pagination(call: types.CallbackQuery, callback_data: dict):
            "<b>Последнее сообщение от бота:</b>\n\n" \
            f"{last_post}"
 
-    await call.message.answer(text, reply_markup=admin_pagination_kb(users, page))
+    await call.message.edit_text(text, reply_markup=admin_pagination_kb(users, page))
 
     logger.debug(f"Admin {call.from_user.id} entered admin_pagination handler with {page=}")
 
 
 @dp.callback_query_handler(text="admins")
 async def watch_admins(call: types.CallbackQuery):
-    await call.message.delete()
+    await call.answer()
 
     admins = await db.get_admins()
-
-    await call.message.answer(f"На данный момент в базе находится админов: {len(admins)}", reply_markup=admin_kb)
+    await call.message.edit_text(f"На данный момент в базе находится админов: {len(admins)}", reply_markup=admin_kb)
 
     logger.debug(f"Admin {call.from_user.id} entered watch_admins handler")
 
 
 @dp.callback_query_handler(text="add_admin")
 async def add_admin(call: types.CallbackQuery, state: FSMContext):
-    await call.message.delete()
-    await call.message.answer(f"Перешлите в бота любое сообщение пользователя, которого хотите сделать админом")
+    await call.message.edit_text(f"Перешлите в бота любое сообщение пользователя, которого хотите сделать админом")
 
     await state.set_state('adding_admin')
 
@@ -116,7 +112,6 @@ async def message_is_not_forwarded(message: types.Message):
 
 @dp.callback_query_handler(text="close_list")
 async def admin_panel(call: types.CallbackQuery):
-    await call.message.delete()
-    await call.message.answer("Выберите нужный пункт", reply_markup=admin_kb)
+    await call.message.edit_text("Выберите нужный пункт", reply_markup=admin_kb)
 
     logger.debug(f"Admin {call.from_user.id} entered admin_panel handler")

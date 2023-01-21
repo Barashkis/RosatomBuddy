@@ -26,7 +26,7 @@ async def main_menu(message: types.Message):
 
 @dp.callback_query_handler(IsRegistered(), text="main_menu")
 async def back_to_main_menu(call: types.CallbackQuery):
-    await call.message.delete()
+    await call.message.edit_reply_markup()
     await call.message.answer("Выбери раздел, который тебя интересует", reply_markup=main_menu_kb)
 
     logger.debug(f"User {call.from_user.id} entered back_to_main_menu handler")
@@ -34,7 +34,7 @@ async def back_to_main_menu(call: types.CallbackQuery):
 
 @dp.callback_query_handler(IsRegistered(), main_menu_cd.filter())
 async def show_posts(call: types.CallbackQuery, callback_data: dict):
-    await call.message.delete()
+    await call.message.edit_reply_markup()
 
     tag = callback_data["tag"]
     page = int(callback_data["page"])
@@ -47,14 +47,16 @@ async def show_posts(call: types.CallbackQuery, callback_data: dict):
     text = post["text"]
     photo = post["photo"]
 
-    if photo:
-        await call.message.answer_photo(photo=photo, caption=text, reply_markup=kb)
+    post_type = "post with with photo" if photo else "text post"
 
-        logger.debug(f"User {call.from_user.id} entered show_posts handler with {tag=} and {page=} and got post with with photo")
+    if page == 1:
+        await call.message.edit_text(text, reply_markup=kb)
+    elif photo:
+        await call.message.answer_photo(photo=photo, caption=text, reply_markup=kb)
     else:
         await call.message.answer(text, reply_markup=kb)
 
-        logger.debug(f"User {call.from_user.id} entered show_posts handler with {tag=} and  {page=} and got text post")
+    logger.debug(f"User {call.from_user.id} entered show_posts handler with {tag=} and  {page=} and got {post_type}")
 
 
 @dp.callback_query_handler(text="main_menu")

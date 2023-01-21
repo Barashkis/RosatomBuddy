@@ -19,42 +19,41 @@ async def finish_registration(call_or_message: Union[types.CallbackQuery, types.
     user_id = call_or_message.from_user.id
     username = call_or_message.from_user.username
     date_of_registration = int(datetime.now().timestamp())
+    text = "В программу адаптации включено более 100 публикаций, " \
+           "с которыми ты ознакомишься в течение 12 недель\n\n" \
+           "🛎 Проверь, включены ли у тебя уведомления. У тебя все обязательно получится!"
 
     await db.add_user(user_id, username, division, company, is_trainer, date_of_registration)
 
-    await bot.send_message(user_id,
-                           "В программу адаптации включено более 100 публикаций, "
-                           "с которыми ты ознакомишься в течение 12 недель\n\n"
-                           "🛎 Проверь, включены ли у тебя уведомления. У тебя все обязательно получится!",
-                           reply_markup=ready_kb)
+    if company == "Корпоративная Академия Росатома" or isinstance(call_or_message, types.CallbackQuery):
+        await bot.edit_message_text(chat_id=user_id, message_id=call_or_message.message.message_id, text=text, reply_markup=ready_kb)
+    else:
+        await bot.send_message(chat_id=user_id, text=text, reply_markup=ready_kb)
 
     logger.debug(f"User {call_or_message.from_user.id} finished registration successfully")
 
 
 @dp.callback_query_handler(text="accept")
 async def choose_division(call: types.CallbackQuery):
-    await call.message.delete()
-    await call.message.answer(f"{hbold('Выбери свой дивизион.')} Если предприятие, в котором ты работаешь, "
-                              "не включено в дивизиональную структуру, нажми на пункт «Другой»",
-                              reply_markup=from_list_kb(divisions))
+    await call.message.edit_text(f"{hbold('Выбери свой дивизион.')} Если предприятие, в котором ты работаешь, "
+                                 "не включено в дивизиональную структуру, нажми на пункт «Другой»",
+                                 reply_markup=from_list_kb(divisions))
 
     logger.debug(f"User {call.from_user.id} entered choose_division handler")
 
 
 @dp.callback_query_handler(divisions_cd.filter())
 async def choose_company_or_register(call: types.CallbackQuery, state: FSMContext, callback_data: dict):
-    await call.message.delete()
-
     division_index = int(callback_data["choice"])
     division = divisions[division_index]
 
     if division == "Другой":
         companies_text = "\n".join([f"{number}. {company}" for number, company in enumerate(companies, start=1)])
 
-        await call.message.answer(f"{hbold('Выбери предприятие, в котором ты работаешь (ответить нужно цифрой).')} "
-                                  "Например, если ты являешься сотрудником "
-                                  "Корпоративной Академии Росатома, пришли мне цифру «1»\n\n"
-                                  f"{companies_text}")
+        await call.message.edit_text(f"{hbold('Выбери предприятие, в котором ты работаешь (ответить нужно цифрой).')} "
+                                     "Например, если ты являешься сотрудником "
+                                     "Корпоративной Академии Росатома, пришли мне цифру «1»\n\n"
+                                     f"{companies_text}")
         await state.set_state("input_company")
     else:
         await finish_registration(call_or_message=call, division=division)
@@ -83,8 +82,6 @@ async def choose_role_or_register(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(Text(startswith="trainer"))
 async def choose_role_and_register(call: types.CallbackQuery):
-    await call.message.delete()
-
     chosen_role = call.data.split("_")[1]
 
     logger.debug(f"User {call.from_user.id} entered choose_role_and_register handler and chose role '{'trainer' if chosen_role == 'yes' else 'user'}'")
@@ -98,13 +95,12 @@ async def choose_role_and_register(call: types.CallbackQuery):
 
 @dp.callback_query_handler(text="ready")
 async def user_ready(call: types.CallbackQuery):
-    await call.message.delete()
-    await call.message.answer("🎉 Поздравляем, ты стал частью команды профессионалов и работаешь в Госкорпорации "
-                              "«Росатом». В первую очередь тебе необходимо оформить документы в отделе кадров "
-                              "предприятия\n\n "
-                              "Также ты можешь познакомиться с нашей отраслью поближе! Я добавил разные разделы, "
-                              "в которых ты можешь побольше узнать о Росатоме ⚛️",
-                              reply_markup=main_menu_kb)
+    await call.message.edit_text("🎉 Поздравляем, ты стал частью команды профессионалов и работаешь в Госкорпорации "
+                                 "«Росатом». В первую очередь тебе необходимо оформить документы в отделе кадров "
+                                 "предприятия\n\n "
+                                 "Также ты можешь познакомиться с нашей отраслью поближе! Я добавил разные разделы, "
+                                 "в которых ты можешь побольше узнать о Росатоме ⚛️",
+                                 reply_markup=main_menu_kb)
 
     await set_default_commands(dp)
 
