@@ -1,6 +1,5 @@
 import asyncio
 from datetime import datetime
-from typing import Union
 
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -14,8 +13,7 @@ from keyboards import from_list_kb, divisions_cd, is_trainer_kb, ready_kb, main_
 from config import companies, divisions
 
 
-async def finish_registration(call_or_message: Union[types.CallbackQuery, types.Message],
-                              division: str, company: str = None, is_trainer: bool = False):
+async def finish_registration(call_or_message, division: str, company: str = None, is_trainer: bool = False):
     user_id = call_or_message.from_user.id
     username = call_or_message.from_user.username
     date_of_registration = int(datetime.now().timestamp())
@@ -25,10 +23,10 @@ async def finish_registration(call_or_message: Union[types.CallbackQuery, types.
 
     await db.add_user(user_id, username, division, company, is_trainer, date_of_registration)
 
-    if company == "Корпоративная Академия Росатома" or isinstance(call_or_message, types.CallbackQuery):
-        await bot.edit_message_text(chat_id=user_id, message_id=call_or_message.message.message_id, text=text, reply_markup=ready_kb)
+    if isinstance(call_or_message, types.Message):
+        await bot.send_message(user_id, text, reply_markup=ready_kb)
     else:
-        await bot.send_message(chat_id=user_id, text=text, reply_markup=ready_kb)
+        await bot.edit_message_text(text, user_id, call_or_message.message.message_id, reply_markup=ready_kb)
 
     logger.debug(f"User {call_or_message.from_user.id} finished registration successfully")
 
