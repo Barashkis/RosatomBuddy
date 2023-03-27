@@ -6,24 +6,14 @@ from utils import db
 
 class IsAdmin(BoundFilter):
     async def check(self, message: types.Message):
-        admins = [admin["user_id"] for admin in await db.get_admins()]
-        if message.from_user.id in admins:
-            return True
-
-        return False
+        return message.from_user.id in [admin["user_id"] for admin in await db.get_admins()]
 
 
 class IsForwarded(BoundFilter):
     async def check(self, message: types.Message):
-        if message.is_forward():
-            return True
-
-        return False
+        return message.is_forward()
 
 
 class IsFromUser(BoundFilter):
     async def check(self, message: types.Message):
-        if message.forward_from.is_bot:
-            return False
-
-        return True
+        return message.forward_from.is_bot
